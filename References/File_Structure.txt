@@ -1,0 +1,27 @@
+Booking/
+│
+├── client/                            # React Frontend
+│   ├── public/
+│   ├── src/
+│   ├── Dockerfile                     # Dockerfile for frontend
+│   └── vite.config.ts                 # or CRA config
+│
+├── server/                            # Express Backend
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── models/
+│   │   ├── middleware/
+│   │   ├── services/
+│   │   ├── config/
+│   │   └── index.ts
+│   ├── Dockerfile                     # Dockerfile for backend
+│   ├── tsconfig.json
+│   └── package.json
+│
+│
+├── References/
+├── .env                               # Global env (optional)
+├── docker-compose.yml                 # Multi-service definition
+├── .gitignore
+└── README.md

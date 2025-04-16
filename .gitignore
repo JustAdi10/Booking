@@ -1,0 +1,43 @@
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*.local
+
+# Firebase service account key (VERY important)
+**/firebase-adminsdk*.json
+
+# Local dev databases
+*.sqlite
+*.db
+
+# Prisma
+prisma/dev.db
+prisma/migrations/
+
+# IDE/editor files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Docker
+**/Dockerfile
+docker-compose.override.yml
+
+# Misc
+coverage/
+temp/
+tmp/

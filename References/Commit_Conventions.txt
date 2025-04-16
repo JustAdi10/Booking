@@ -1,0 +1,10 @@
+feat	    A new feature
+fix	        A bug fix
+docs	    Documentation changes
+style	    Non-functional changes (e.g., format, missing semi-colons)
+refactor	Code restructuring without behavior change
+test	    Adding or updating tests
+chore	    Maintenance (e.g., updating deps)
+
+Examples :  fix(db): correct foreign key reference for bookings
+            feat(booking): allow users to cancel their reservations

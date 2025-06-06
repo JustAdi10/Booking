@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Users and Authentication
+model User {
+  id          String   @id @default(uuid())
+  firebaseUid String   @unique @map("firebase_uid")
+  email       String   @unique
+  name        String
+  phone       String?
+  role        UserRole @default(USER)
+  avatarUrl   String?  @map("avatar_url")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  bookings           Booking[]
+  assignedTasks      HousekeepingTask[] @relation("AssignedTasks")
+  notifications      Notification[]
+  pushTokens         PushToken[]
+  auditLogs          AuditLog[]
+  systemSettingsUpdates SystemSetting[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  HOUSEKEEPING
+  USER
+}
+
+// Facilities (Grounds and Buildings)
+model Facility {
+  id          String       @id @default(uuid())
+  name        String
+  type        FacilityType
+  description String?      @db.Text
+  location    String?
+  state       String?
+  city        String?
+  address     String?      @db.Text
+  capacity    Int?
+  amenities   Json?        // Store amenities as JSON array
+  images      Json?        // Store image URLs as JSON array
+  isActive    Boolean      @default(true) @map("is_active")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  rooms    Room[]
+  bookings Booking[]
+
+  @@map("facilities")
+}
+
+enum FacilityType {
+  GROUND
+  BUILDING
+}
+
+// Rooms (Sub-facilities linked to buildings)
+model Room {
+  id           String   @id @default(uuid())
+  facilityId   String   @map("facility_id")
+  name         String
+  roomNumber   String?  @map("room_number")
+  type         RoomType
+  capacity     Int
+  floorNumber  Int?     @map("floor_number")
+  amenities    Json?
+  images       Json?
+  pricePerNight Decimal? @map("price_per_night") @db.Decimal(10, 2)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  facility          Facility           @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  bookings          Booking[]
+  housekeepingTasks HousekeepingTask[]
+
+  @@map("rooms")
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  SUITE
+  DORMITORY
+}
+
+// Bookings
+model Booking {
+  id             String        @id @default(uuid())
+  userId         String        @map("user_id")
+  facilityId     String?       @map("facility_id")
+  roomId         String?       @map("room_id")
+  bookingType    BookingType   @map("booking_type")
+  startDate      DateTime      @map("start_date") @db.Date
+  endDate        DateTime      @map("end_date") @db.Date
+  startTime      DateTime?     @map("start_time") @db.Time
+  endTime        DateTime?     @map("end_time") @db.Time
+  guestsCount    Int           @default(1) @map("guests_count")
+  totalAmount    Decimal?      @map("total_amount") @db.Decimal(10, 2)
+  status         BookingStatus @default(PENDING)
+  specialRequests String?      @map("special_requests") @db.Text
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facility Facility? @relation(fields: [facilityId], references: [id], onDelete: SetNull)
+  room     Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  @@index([startDate, endDate])
+  @@index([facilityId, startDate])
+  @@index([roomId, startDate])
+  @@index([userId, createdAt])
+  @@map("bookings")
+}
+
+enum BookingType {
+  GROUND
+  ROOM
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// Housekeeping Tasks
+model HousekeepingTask {
+  id              String                   @id @default(uuid())
+  roomId          String                   @map("room_id")
+  assignedTo      String                   @map("assigned_to")
+  taskType        HousekeepingTaskType     @default(CLEANING) @map("task_type")
+  priority        TaskPriority             @default(MEDIUM)
+  status          HousekeepingTaskStatus   @default(PENDING)
+  description     String?                  @db.Text
+  deadline        DateTime?
+  completionNotes String?                  @map("completion_notes") @db.Text
+  images          Json?                    // Before/after cleaning images
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  completedAt     DateTime?                @map("completed_at")
+
+  // Relations
+  room       Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  assignedUser User @relation("AssignedTasks", fields: [assignedTo], references: [id], onDelete: Cascade)
+
+  @@index([assignedTo, status])
+  @@index([roomId, createdAt])
+  @@index([deadline, status])
+  @@map("housekeeping_tasks")
+}
+
+enum HousekeepingTaskType {
+  CLEANING
+  MAINTENANCE
+  INSPECTION
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum HousekeepingTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  NEEDS_REPAIR
+}
+
+// Meal Plans
+model MealPlan {
+  id                String   @id @default(uuid())
+  date              DateTime @db.Date
+  mealType          MealType @map("meal_type")
+  menuItems         Json     @map("menu_items") // Array of menu items
+  estimatedQuantity Int      @map("estimated_quantity")
+  actualQuantity    Int?     @map("actual_quantity")
+  costPerPerson     Decimal? @map("cost_per_person") @db.Decimal(8, 2)
+  totalCost         Decimal? @map("total_cost") @db.Decimal(10, 2)
+  notes             String?  @db.Text
+  isAutoGenerated   Boolean  @default(true) @map("is_auto_generated")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([date, mealType], name: "unique_date_meal")
+  @@index([date, mealType])
+  @@map("meal_plans")
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACKS
+}
+
+// Notifications
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  title       String
+  message     String           @db.Text
+  type        NotificationType
+  priority    NotificationPriority @default(MEDIUM)
+  isRead      Boolean          @default(false) @map("is_read")
+  isPushSent  Boolean          @default(false) @map("is_push_sent")
+  relatedId   String?          @map("related_id") // ID of related booking/task/etc
+  relatedType String?          @map("related_type") // Type of related entity
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  BOOKING
+  HOUSEKEEPING
+  MEAL
+  SYSTEM
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// Push Notification Tokens
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String
+  platform  Platform
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token], name: "unique_user_token")
+  @@map("push_tokens")
+}
+
+enum Platform {
+  WEB
+  IOS
+  ANDROID
+}
+
+// System Settings
+model SystemSetting {
+  id           String   @id @default(uuid())
+  settingKey   String   @unique @map("setting_key")
+  settingValue Json     @map("setting_value")
+  description  String?  @db.Text
+  updatedBy    String?  @map("updated_by")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  updatedByUser User? @relation(fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@map("system_settings")
+}
+
+// Audit Logs
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  oldValues  Json?    @map("old_values")
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

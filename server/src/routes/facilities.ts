@@ -2,9 +2,58 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, authorize, auditLog } from '../middleware/auth';
 import { UserRole, FacilityType, CreateFacilityRequest, UpdateFacilityRequest, FacilityFilters, PaginationParams } from '../types';
+import { mockFacilities, getRoomsWithAvailability } from '../services/mockData';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+/**
+ * GET /api/facilities/public
+ * Public endpoint for testing - List facilities without authentication
+ */
+router.get('/public', async (req: Request, res: Response) => {
+  try {
+    // Return mock facilities for testing
+    res.json({
+      success: true,
+      data: mockFacilities,
+      total: mockFacilities.length
+    });
+  } catch (error) {
+    console.error('Error fetching facilities:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch facilities'
+    });
+  }
+});
+
+/**
+ * GET /api/facilities/:id/rooms/availability
+ * Public endpoint to get rooms with availability for a facility
+ */
+router.get('/:id/rooms/availability', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const start = startDate ? new Date(startDate as string) : new Date();
+    const end = endDate ? new Date(endDate as string) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const roomsWithAvailability = getRoomsWithAvailability(id, start, end);
+
+    res.json({
+      success: true,
+      data: roomsWithAvailability
+    });
+  } catch (error) {
+    console.error('Error fetching room availability:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch room availability'
+    });
+  }
+});
 
 /**
  * GET /api/facilities

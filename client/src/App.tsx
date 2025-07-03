@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import FacilitiesPage from './pages/FacilitiesPage'
+import RoomSelectionPage from './pages/RoomSelectionPage'
+import BookingPage from './pages/BookingPage'
 import BookingsPage from './pages/BookingsPage'
 import HousekeepingPage from './pages/HousekeepingPage'
 import MealsPage from './pages/MealsPage'
@@ -36,6 +38,31 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <FacilitiesPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/facilities/:facilityId/rooms" element={
+            <ProtectedRoute>
+              <Layout>
+                <RoomSelectionPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          {/* Booking routes */}
+          <Route path="/facilities/:facilityId/book" element={
+            <ProtectedRoute>
+              <Layout>
+                <BookingPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/facilities/:facilityId/rooms/:roomId/book" element={
+            <ProtectedRoute>
+              <Layout>
+                <BookingPage />
               </Layout>
             </ProtectedRoute>
           } />

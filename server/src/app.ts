@@ -74,6 +74,26 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Test endpoint for mock data
+app.get('/test/facilities', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Test endpoint working',
+    data: [
+      {
+        id: "facility-1",
+        name: "Main Cricket Ground",
+        type: "GROUND"
+      },
+      {
+        id: "facility-2",
+        name: "Guest House Building A",
+        type: "BUILDING"
+      }
+    ]
+  });
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

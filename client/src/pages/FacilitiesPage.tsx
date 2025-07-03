@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
 const FacilitiesPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const navigate = useNavigate();
+
+  const handleBookNow = (facility: any) => {
+    if (facility.type === 'BUILDING') {
+      // Navigate to room selection for buildings
+      navigate(`/facilities/${facility.id}/rooms`);
+    } else {
+      // For grounds, navigate directly to time slot booking
+      navigate(`/facilities/${facility.id}/book`);
+    }
+  };
 
   const facilities = [
     {
@@ -166,7 +178,7 @@ const FacilitiesPage: React.FC = () => {
                   <Button variant="outline" size="sm">
                     View Details
                   </Button>
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => handleBookNow(facility)}>
                     Book Now
                   </Button>
                 </div>
@@ -227,7 +239,7 @@ const FacilitiesPage: React.FC = () => {
                           <Button variant="outline" size="sm">
                             View
                           </Button>
-                          <Button size="sm">
+                          <Button size="sm" onClick={() => handleBookNow(facility)}>
                             Book
                           </Button>
                         </div>

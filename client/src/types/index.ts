@@ -73,6 +73,13 @@ export enum RoomType {
   DORMITORY = 'DORMITORY'
 }
 
+// Extended Room interface with availability information
+export interface RoomWithAvailability extends Room {
+  isAvailable?: boolean;
+  availabilityNotes?: string;
+  bookings?: Booking[];
+}
+
 // Booking types
 export interface Booking {
   id: string;
